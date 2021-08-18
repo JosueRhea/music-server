@@ -4,7 +4,6 @@ const morgan = require("morgan")
 const cors = require("cors")
 
 const songsRoutes = require("./routes/tracks.routes")
-const { config } = require("dotenv")
 
 const app = express();
 
