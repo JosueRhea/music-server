@@ -13,6 +13,6 @@ app.use(morgan("dev"))
 //routes
 app.use(songsRoutes)
 
-app.listen(5000, ()=>{
-    console.log("Server on port 3000")
+app.listen(process.env.PORT || 5000, ()=>{
+    console.log("Server started")
 })
