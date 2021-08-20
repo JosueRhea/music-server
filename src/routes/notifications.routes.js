@@ -1,8 +1,12 @@
 const { Router } = require("express");
 const router = Router();
 
-const {suscribeUser} = require("../controllers/notificationsController")
+const {
+  suscribeUser,
+  push,
+} = require("../controllers/notificationsController");
 
-router.post("/suscription", suscribeUser)
+router.post("/suscription", suscribeUser);
+router.post("/not", push);
 
 module.exports = router;

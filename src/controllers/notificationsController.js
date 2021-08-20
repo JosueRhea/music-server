@@ -1,17 +1,34 @@
 const webpush = require("../webpushConfig");
-
-let pushSuscription;
+const { getConnection } = require("../database");
 
 const suscribeUser = async (req, res) => {
   try {
-    pushSuscription = req.body;
-    res.status(200);
+    const db = getConnection();
+    const collectionRef = db.collection("users");
 
+    const insertResult = await collectionRef.insert(req.body);
+    res.status(200).json(insertResult);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const push = async (req, res) => {
+  try {
     const payload = JSON.stringify({
-      title: "My custom notification",
-      message: "Hello from server",
+      title: "To you",
+      message: `${req.body.displayName} posted a message`,
     });
-    await webpush.sendNotification(pushSuscription, payload);
+
+    const db = getConnection();
+    const collection = db.collection("users");
+
+    const users = await collection.find({}).toArray();
+    res.status(200).json();
+
+    users.map(async (suscription) => {
+      await webpush.sendNotification(suscription, payload);
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -19,4 +36,5 @@ const suscribeUser = async (req, res) => {
 
 module.exports = {
   suscribeUser,
+  push,
 };
