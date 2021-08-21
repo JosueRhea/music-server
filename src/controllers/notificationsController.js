@@ -27,7 +27,11 @@ const push = async (req, res) => {
     res.status(200).json();
 
     users.map(async (suscription) => {
-      await webpush.sendNotification(suscription, payload);
+      try {
+        await webpush.sendNotification(suscription, payload);
+      } catch (error) {
+        if (error.statusCode == 401) return;
+      }
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

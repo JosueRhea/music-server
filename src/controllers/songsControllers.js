@@ -4,47 +4,57 @@ const { GridFSBucket, ObjectId } = require("mongodb");
 const { Readable } = require("stream");
 
 const uploadSong = (req, res) => {
-  const storage = multer.memoryStorage();
-  const upload = multer({
-    storage: storage,
-    limits: {
-      fields: 1,
-      fileSize: 50000000,
-      files: 1,
-      parts: 2,
-    },
-  });
-
-  upload.single("song")(req, res, (err) => {
-    if (err) {
-      console.log(err);
-      return res.status(400).json({ error: err.message });
-    }
-
-    const { name } = req.body;
-    //   const { song } = req.file;
-
-    const redableSongStream = new Readable();
-    redableSongStream.push(req.file.buffer);
-    redableSongStream.push(null);
-
-    const db = getConnection();
-    const bucket = new GridFSBucket(db, {
-      bucketName: "songs",
+  try {
+    const storage = multer.memoryStorage();
+    const upload = multer({
+      storage: storage,
+      limits: {
+        fields: 1,
+        fileSize: 50000000,
+        files: 1,
+        parts: 2,
+      },
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype == "audio/mpeg" || file.mimetype == "audio/mp3")
+          return cb(null, true);
+        cb(null, false);
+        return cb(new Error("Only mp3 or mpeg format allowed"));
+      },
     });
 
-    const uploadStream = bucket.openUploadStream(name);
-    const id = uploadStream.id;
-    redableSongStream.pipe(uploadStream);
+    upload.single("song")(req, res, (err) => {
+      if (err) {
+        console.log(err);
+        return res.status(400).json({ error: err.message });
+      }
 
-    uploadStream.on("error", () => {
-      return res.status(400).json({ error: "Something went wrong" });
-    });
+      const { name } = req.body;
+      //   const { song } = req.file;
 
-    uploadStream.on("finish", () => {
-      return res.status(200).json({ message: "File uploaded", id });
+      const redableSongStream = new Readable();
+      redableSongStream.push(req.file.buffer);
+      redableSongStream.push(null);
+
+      const db = getConnection();
+      const bucket = new GridFSBucket(db, {
+        bucketName: "songs",
+      });
+
+      const uploadStream = bucket.openUploadStream(name);
+      const id = uploadStream.id;
+      redableSongStream.pipe(uploadStream);
+
+      uploadStream.on("error", () => {
+        return res.status(400).json({ error: "Something went wrong" });
+      });
+
+      uploadStream.on("finish", () => {
+        return res.status(200).json({ message: "File uploaded", id });
+      });
     });
-  });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
 const getSongs = async (req, res) => {
