@@ -2,6 +2,37 @@ const multer = require("multer");
 const { getConnection } = require("../database");
 const { GridFSBucket, ObjectId } = require("mongodb");
 const { Readable } = require("stream");
+const ytdl = require("ytdl-core");
+
+const uploadSongWithLink = async (req, res) => {
+  try {
+    const { url } = req.query;
+    const { name } = req.body;
+
+    const info = await ytdl(url, {
+      filter: (format) => format.itag == 250,
+    });
+
+    const db = getConnection();
+    const bucket = new GridFSBucket(db, {
+      bucketName: "songs",
+    });
+
+    const uploadStream = bucket.openUploadStream(name);
+    const id = uploadStream.id;
+    info.pipe(uploadStream);
+
+    uploadStream.on("error", () => {
+      return res.status(400).json({ error: "Something went wrong" });
+    });
+
+    uploadStream.on("finish", () => {
+      return res.status(200).json({ message: "File uploaded", id });
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 const uploadSong = (req, res) => {
   try {
@@ -29,7 +60,6 @@ const uploadSong = (req, res) => {
       }
 
       const { name } = req.body;
-      //   const { song } = req.file;
 
       const redableSongStream = new Readable();
       redableSongStream.push(req.file.buffer);
@@ -100,4 +130,5 @@ module.exports = {
   uploadSong,
   getSongs,
   getSong,
+  uploadSongWithLink,
 };
