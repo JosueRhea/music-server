@@ -14,6 +14,6 @@ router.get("/songs/:id", getSong);
 
 router.post("/song/upload", uploadSong);
 
-router.post("/upload/:link", uploadSongWithLink);
+router.post("/upload", uploadSongWithLink);
 
 module.exports = router;

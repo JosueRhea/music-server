@@ -9,6 +9,10 @@ const uploadSongWithLink = async (req, res) => {
     const { url } = req.query;
     const { name } = req.body;
 
+    const isValidUrl = ytdl.validateURL(url);
+
+    if (!isValidUrl) return res.status(400).json({ error: "Invalid url" });
+
     const info = await ytdl(url, {
       filter: (format) => format.itag == 250,
     });
