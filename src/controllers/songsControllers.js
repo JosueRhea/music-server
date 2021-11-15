@@ -17,6 +17,8 @@ const uploadSongWithLink = async (req, res) => {
       filter: (format) => format.itag == 250,
     });
 
+    if(!info) return res.status(400).json({error: "Something went wrong"})
+
     const db = getConnection();
     const bucket = new GridFSBucket(db, {
       bucketName: "songs",
