@@ -1,16 +1,5 @@
 const { MongoClient } = require("mongodb");
 
-let db;
+const client = new MongoClient(process.env.DATABASE_URL);
 
-MongoClient.connect(process.env.DATABASE_URL, (err, client) => {
-  if (err) {
-    console.log(err);
-    process.exit(0);
-  }
-  console.log("dabase connected");
-  db = client.db("tracksdb");
-});
-
-const getConnection = () => db;
-
-module.exports = { getConnection };
+module.exports = { client };

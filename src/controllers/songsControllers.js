@@ -1,5 +1,5 @@
 const multer = require("multer");
-const { getConnection } = require("../database");
+const { client } = require("../database");
 const { GridFSBucket, ObjectId } = require("mongodb");
 const { Readable } = require("stream");
 const ytdl = require("ytdl-core");
@@ -17,9 +17,10 @@ const uploadSongWithLink = async (req, res) => {
       filter: (format) => format.itag == 250,
     });
 
-    if(!info) return res.status(400).json({error: "Something went wrong"})
+    if (!info) return res.status(400).json({ error: "Something went wrong" });
 
-    const db = getConnection();
+    await client.connect();
+    const db = client.db("tracksdb");
     const bucket = new GridFSBucket(db, {
       bucketName: "songs",
     });
@@ -40,7 +41,7 @@ const uploadSongWithLink = async (req, res) => {
   }
 };
 
-const uploadSong = (req, res) => {
+const uploadSong = async (req, res) => {
   try {
     const storage = multer.memoryStorage();
     const upload = multer({
@@ -58,6 +59,8 @@ const uploadSong = (req, res) => {
         return cb(new Error("Only mp3 or mpeg format allowed"));
       },
     });
+    await client.connect();
+    const db = client.db("tracksdb");
 
     upload.single("song")(req, res, (err) => {
       if (err) {
@@ -71,7 +74,6 @@ const uploadSong = (req, res) => {
       redableSongStream.push(req.file.buffer);
       redableSongStream.push(null);
 
-      const db = getConnection();
       const bucket = new GridFSBucket(db, {
         bucketName: "songs",
       });
@@ -94,7 +96,8 @@ const uploadSong = (req, res) => {
 };
 
 const getSongs = async (req, res) => {
-  const db = getConnection();
+  await client.connect();
+  const db = client.db("tracksdb");
   const files = db.collection("songs.files");
 
   const songs = await files.find({}).toArray();
@@ -102,10 +105,11 @@ const getSongs = async (req, res) => {
   res.status(200).json(songs);
 };
 
-const getSong = (req, res) => {
+const getSong = async (req, res) => {
   let songId;
-  let db = getConnection();
   try {
+    await client.connect();
+    const db = client.db("tracksdb");
     songId = new ObjectId(req.params.id);
     res.set("Content-Type", "audio/mp3");
     res.set("accept-ranges", "bytes");
