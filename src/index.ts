@@ -1,9 +1,11 @@
-require("dotenv").config();
-const express = require("express");
-const morgan = require("morgan");
-const cors = require("cors");
+import { config } from "dotenv";
+import express from "express";
+import morgan from "morgan";
+import cors from "cors";
 
-const songsRoutes = require("./routes/tracks.routes");
+config();
+
+import { songsRouter } from "./routes/songs";
 
 const app = express();
 
@@ -19,7 +21,7 @@ app.use(express.json());
 app.use(morgan("dev"));
 
 //routes
-app.use(songsRoutes);
+app.use(songsRouter);
 
 app.listen(process.env.PORT || 5000, () => {
   console.log("Server started");
