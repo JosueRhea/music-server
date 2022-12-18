@@ -1,6 +1,6 @@
 import { client } from "../database";
 import { GridFSBucket, ObjectId } from "mongodb";
-import ytdl = require("ytdl-core");
+import ytdl from "ytdl-core";
 import { Request, Response } from "express";
 
 const uploadSongWithLink = async (req: Request, res: Response) => {
@@ -69,6 +69,12 @@ const getSong = async (req: Request, res: Response) => {
     const bucket = new GridFSBucket(db, {
       bucketName: "songs",
     });
+
+    const collection = db.collection("songs.files");
+    const songIfo = await collection.findOne(songId);
+    if (!songIfo)
+      return res.status(400).json({ error: "Cannot retrieve song info" });
+    res.set("content-length", songIfo.length);
 
     const downloadStream = bucket.openDownloadStream(songId);
 
